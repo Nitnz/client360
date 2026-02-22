@@ -1,0 +1,42 @@
+<div class="notes-container">
+
+  <h2>📝 Project Notes</h2>
+
+  <!-- Project ID input (for testing) -->
+  <input
+    type="text"
+    placeholder="Enter Project ID"
+    [(ngModel)]="projectId"
+  />
+
+  <button (click)="loadNotes()">Load Notes</button>
+
+  <hr />
+
+  <!-- Add note -->
+  <div class="add-note">
+    <textarea
+      rows="3"
+      placeholder="Enter note..."
+      [(ngModel)]="noteText">
+    </textarea>
+
+    <button (click)="addNote()">Add Note</button>
+  </div>
+
+  <hr />
+
+  <!-- Loading -->
+  <div *ngIf="loading">Loading notes...</div>
+
+  <!-- Notes list -->
+  <div *ngIf="!loading && notes.length === 0">
+    No notes found.
+  </div>
+
+  <div class="note-card" *ngFor="let n of notes">
+    <p>{{ n.note }}</p>
+    <small>{{ n.createdAt | date:'medium' }}</small>
+  </div>
+
+</div>

@@ -1,0 +1,189 @@
+<div class="page-container">
+
+  <!-- ── Header ─────────────────────────────────────── -->
+  <div class="page-header">
+    <div>
+      <div class="page-label">Finance</div>
+      <h2 class="page-title">Payments</h2>
+    </div>
+  </div>
+
+  <!-- ── Toast alerts ───────────────────────────────── -->
+  <div class="toast success" *ngIf="message">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"/>
+    </svg>
+    {{ message }}
+  </div>
+  <div class="toast error" *ngIf="error">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+    </svg>
+    {{ error }}
+  </div>
+
+  <!-- ── Top row: Project select + Summary ──────────── -->
+  <div class="top-grid">
+
+    <!-- Project dropdown -->
+    <div class="panel select-panel">
+      <div class="panel-label">Select Project</div>
+      <div class="custom-select-wrap">
+        <svg class="select-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+          <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
+        </svg>
+        <select [(ngModel)]="selectedProjectId" (change)="onProjectChange()">
+          <option value="">— Choose a project —</option>
+          <option *ngFor="let p of projects" [value]="p._id">
+            {{ p.projectName }} &nbsp;·&nbsp; ₹{{ p.cost || 0 }}
+          </option>
+        </select>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </div>
+
+      <div class="loading-state" *ngIf="loading">
+        <div class="spinner"></div><span>Loading…</span>
+      </div>
+    </div>
+
+    <!-- Summary cards -->
+    <div class="summary-grid" *ngIf="selectedProject">
+      <div class="summary-card" data-accent="default">
+        <div class="summary-label">Project Cost</div>
+        <div class="summary-value">₹{{ summary.projectCost | number }}</div>
+        <div class="summary-name">{{ selectedProject.projectName }}</div>
+      </div>
+      <div class="summary-card" data-accent="green">
+        <div class="summary-label">Total Paid</div>
+        <div class="summary-value">₹{{ summary.totalPaid | number }}</div>
+        <div class="progress-bar">
+          <div class="progress-fill"
+               [style.width.%]="summary.projectCost ? (summary.totalPaid / summary.projectCost * 100) : 0">
+          </div>
+        </div>
+      </div>
+      <div class="summary-card" data-accent="amber">
+        <div class="summary-label">Pending</div>
+        <div class="summary-value">₹{{ summary.pendingAmount | number }}</div>
+        <div class="summary-sub">Balance due</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Add Payment Form ───────────────────────────── -->
+  <div class="panel add-panel" *ngIf="selectedProjectId">
+    <div class="panel-label">Record Payment</div>
+
+    <div class="form-grid">
+      <div class="field">
+        <label>Amount (₹)</label>
+        <div class="input-wrap">
+          <span class="input-prefix">₹</span>
+          <input type="number" [(ngModel)]="newPayment.amount" placeholder="0.00" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Payment Type</label>
+        <div class="custom-select-wrap">
+          <select [(ngModel)]="newPayment.type">
+            <option>Advance</option>
+            <option>Milestone</option>
+            <option>Final</option>
+          </select>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Method</label>
+        <div class="custom-select-wrap">
+          <select [(ngModel)]="newPayment.method">
+            <option>UPI</option>
+            <option>Cash</option>
+            <option>Bank Transfer</option>
+            <option>Cheque</option>
+          </select>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="field full-width">
+        <label>Note <span class="optional">optional</span></label>
+        <input type="text" [(ngModel)]="newPayment.note" placeholder="e.g. First milestone cleared" />
+      </div>
+    </div>
+
+    <div class="form-footer">
+      <button class="btn-primary" (click)="addPayment()" [disabled]="loading">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Add Payment
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Payment History ────────────────────────────── -->
+  <div class="panel table-panel" *ngIf="payments.length > 0">
+    <div class="panel-header-row">
+      <div class="panel-label">Payment History</div>
+      <div class="record-count">{{ payments.length }} record{{ payments.length !== 1 ? 's' : '' }}</div>
+    </div>
+
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Amount</th>
+            <th>Type</th>
+            <th>Method</th>
+            <th>Note</th>
+            <th>Date</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of payments; let i = index">
+            <td class="td-index">{{ i + 1 }}</td>
+            <td class="td-amount">₹{{ p.amount | number }}</td>
+            <td>
+              <span class="type-badge" [attr.data-type]="p.type | lowercase">{{ p.type }}</span>
+            </td>
+            <td>
+              <span class="method-chip">{{ p.method }}</span>
+            </td>
+            <td class="td-note">{{ p.note || '—' }}</td>
+            <td class="td-date">{{ formatDate(p.createdAt) }}</td>
+            <td>
+              <button class="btn-icon danger" (click)="deletePayment(p._id)" title="Delete">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                  <path d="M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                </svg>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Empty state ────────────────────────────────── -->
+  <div class="empty-state" *ngIf="selectedProjectId && payments.length === 0 && !loading">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+      <rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>
+    </svg>
+    <p>No payments recorded for this project yet.</p>
+  </div>
+
+</div>

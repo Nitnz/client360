@@ -1,0 +1,190 @@
+<div class="page-container">
+
+  <!-- ── Header ─────────────────────────────────────── -->
+  <div class="page-header">
+    <div>
+      <div class="page-label">Management</div>
+      <h2 class="page-title">Clients</h2>
+    </div>
+    <button class="btn-primary" (click)="showAddForm = !showAddForm">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      Add Client
+    </button>
+  </div>
+
+  <!-- ── Add Client Form ─────────────────────────────── -->
+  <div class="add-form-panel" [class.open]="showAddForm">
+    <div class="panel-inner">
+      <h3 class="panel-title">New Client</h3>
+      <div class="form-grid">
+        <div class="field">
+          <label>Name</label>
+          <input type="text" placeholder="John Doe" [(ngModel)]="newClient.name" />
+        </div>
+        <div class="field">
+          <label>Company</label>
+          <input type="text" placeholder="Acme Corp" [(ngModel)]="newClient.companyName" />
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <input type="email" placeholder="john@acme.com" [(ngModel)]="newClient.email" />
+        </div>
+        <div class="field">
+          <label>Phone</label>
+          <input type="tel" placeholder="+91 98765 43210" [(ngModel)]="newClient.phone" />
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn-ghost" (click)="showAddForm = false">Cancel</button>
+        <button class="btn-primary" (click)="addClient()">Save Client</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Loading ─────────────────────────────────────── -->
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div>
+    <span>Loading clients…</span>
+  </div>
+
+  <!-- ── Empty ───────────────────────────────────────── -->
+  <div class="empty-state" *ngIf="!loading && clients.length === 0">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+    </svg>
+    <p>No clients yet. Add your first one above.</p>
+  </div>
+
+  <!-- ── Table ───────────────────────────────────────── -->
+  <div class="table-wrap" *ngIf="!loading && clients.length">
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Client</th>
+          <th>Email</th>
+          <th>Phone</th>
+          <th>Projects</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <ng-container *ngFor="let c of clients">
+
+          <!-- ── Normal row ── -->
+          <tr class="data-row" *ngIf="editingId !== c._id"
+              [class.row-expanded]="expandedClientId === c._id">
+            <td>
+              <div class="client-cell">
+                <div class="client-avatar">{{ c.name?.charAt(0) | uppercase }}</div>
+                <div>
+                  <div class="client-name">{{ c.name }}</div>
+                  <div class="client-company">{{ c.companyName }}</div>
+                </div>
+              </div>
+            </td>
+            <td class="td-muted">{{ c.email }}</td>
+            <td class="td-muted">{{ c.phone }}</td>
+            <td>
+              <button class="btn-pill" (click)="toggleProjects(c._id)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     [style.transform]="expandedClientId === c._id ? 'rotate(180deg)' : 'none'"
+                     style="transition:transform 0.2s ease">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+                {{ expandedClientId === c._id ? 'Hide' : 'View' }}
+              </button>
+            </td>
+            <td>
+              <div class="action-group">
+                <button class="btn-icon" title="Edit" (click)="startEdit(c)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
+                <button class="btn-icon danger" title="Delete" (click)="deleteClient(c._id)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                    <path d="M10 11v6M14 11v6"/>
+                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <!-- ── Edit row ── -->
+          <tr class="edit-row" *ngIf="editingId === c._id">
+            <td>
+              <div class="edit-cell-group">
+                <input class="table-input" [(ngModel)]="editClient.name" placeholder="Name" />
+                <input class="table-input" [(ngModel)]="editClient.companyName" placeholder="Company" />
+              </div>
+            </td>
+            <td><input class="table-input" [(ngModel)]="editClient.email" placeholder="Email" /></td>
+            <td><input class="table-input" [(ngModel)]="editClient.phone" placeholder="Phone" /></td>
+            <td>—</td>
+            <td>
+              <div class="action-group">
+                <button class="btn-save" (click)="saveEdit()">Save</button>
+                <button class="btn-ghost-sm" (click)="cancelEdit()">Cancel</button>
+              </div>
+            </td>
+          </tr>
+
+          <!-- ── Projects expand row ── -->
+          <tr class="expand-row" *ngIf="expandedClientId === c._id">
+            <td colspan="5">
+
+              <div class="expand-inner">
+                <div class="loading-state sm" *ngIf="projectsLoading">
+                  <div class="spinner sm"></div><span>Loading projects…</span>
+                </div>
+
+                <div class="empty-inline" *ngIf="!projectsLoading && clientProjects.length === 0">
+                  No projects found for this client.
+                </div>
+
+                <table class="sub-table" *ngIf="!projectsLoading && clientProjects.length">
+                  <thead>
+                    <tr>
+                      <th>Project</th>
+                      <th>Cost</th>
+                      <th>Status</th>
+                      <th>Domain Expiry</th>
+                      <th>Hosting Expiry</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let p of clientProjects">
+                      <td class="sub-name">{{ p.projectName }}</td>
+                      <td>₹ {{ p.cost }}</td>
+                      <td>
+                        <span class="status-badge" [attr.data-status]="p.status | lowercase">
+                          {{ p.status }}
+                        </span>
+                      </td>
+                      <td>{{ p.domainExpiry | date:'mediumDate' }}</td>
+                      <td>{{ p.hostingExpiry | date:'mediumDate' }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+            </td>
+          </tr>
+
+        </ng-container>
+      </tbody>
+    </table>
+
+  </div>
+
+</div>

@@ -1,0 +1,70 @@
+<div class="page-container">
+
+  <!-- ── Header ─────────────────────────────────────── -->
+  <div class="page-header">
+    <div>
+      <div class="page-label">Monitoring</div>
+      <h2 class="page-title">Expiry Alerts</h2>
+    </div>
+    <div class="alert-count" *ngIf="!loading && projects.length > 0">
+      {{ projects.length }} alert{{ projects.length !== 1 ? 's' : '' }}
+    </div>
+  </div>
+
+  <!-- ── Loading ────────────────────────────────────── -->
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div>
+    <span>Checking expiries…</span>
+  </div>
+
+  <!-- ── Empty ──────────────────────────────────────── -->
+  <div class="empty-state" *ngIf="!loading && projects.length === 0">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+      <polyline points="20 6 9 17 4 12"/>
+    </svg>
+    <p>All clear — no expiring projects</p>
+  </div>
+
+  <!-- ── Table ──────────────────────────────────────── -->
+  <div class="table-wrap" *ngIf="!loading && projects.length > 0">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Client</th>
+          <th>Project</th>
+          <th>Domain Expiry</th>
+          <th>Hosting Expiry</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="data-row" *ngFor="let p of projects">
+          <td>
+            <div class="client-cell">
+              <div class="client-avatar">{{ p.client?.name?.charAt(0) | uppercase }}</div>
+              <div>
+                <div class="client-name">{{ p.client?.name }}</div>
+                <div class="client-company">{{ p.client?.companyName }}</div>
+              </div>
+            </div>
+          </td>
+          <td class="project-name">{{ p.projectName }}</td>
+          <td class="td-date">
+            <span *ngIf="p.domainExpiry">{{ p.domainExpiry | date:'mediumDate' }}</span>
+            <span class="td-muted" *ngIf="!p.domainExpiry">—</span>
+          </td>
+          <td class="td-date">
+            <span *ngIf="p.hostingExpiry">{{ p.hostingExpiry | date:'mediumDate' }}</span>
+            <span class="td-muted" *ngIf="!p.hostingExpiry">—</span>
+          </td>
+          <td>
+            <span class="expiry-badge" [attr.data-status]="getBadgeClass(p.expiryStatus)">
+              {{ p.expiryStatus }}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
