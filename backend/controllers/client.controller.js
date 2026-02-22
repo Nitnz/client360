@@ -1,6 +1,6 @@
 const Client = require('../models/client.model');
 
-exports.createClient = async (req, res) => {
+exports.createClient = async (req, res) => {   
   try {
     const client = await Client.create(req.body);
     res.status(201).json(client);
@@ -50,13 +50,19 @@ exports.updateClient = async (req, res) => {
 
 exports.deleteClient = async (req, res) => {
   try {
-    const client = await Client.findByIdAndDelete(req.params.id);
+    const Project = require('../models/project.model');
+    const projectCount = await Project.countDocuments({ client: req.params.id });
 
-    if (!client) {
-      return res.status(404).json({ message: "Client not found" });
+    if (projectCount > 0) {
+      return res.status(400).json({
+        message: `This client has ${projectCount} project(s). Please delete all projects first before deleting the client.`
+      });
     }
 
-    res.json({ message: "Client deleted successfully" });
+    const client = await Client.findByIdAndDelete(req.params.id);
+    if (!client) return res.status(404).json({ message: 'Client not found' });
+
+    res.json({ message: 'Client deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

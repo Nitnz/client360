@@ -1,24 +1,31 @@
 const mongoose = require('mongoose');
 
 const paymentSchema = new mongoose.Schema({
-  projectId: {
+  project: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Project',
-    required: true
+    required: true,  // ← comma was missing here
+    index: true
   },
+
   amount: {
     type: Number,
     required: true
   },
-  paymentType: {
+
+  type: {
     type: String,
     enum: ['Advance', 'Milestone', 'Final'],
-    required: true
+    default: 'Advance'
   },
-  paymentDate: {
-    type: Date,
-    default: Date.now
-  }
+
+  method: {
+    type: String,
+    default: 'UPI'
+  },
+
+  note: String
+
 }, { timestamps: true });
 
 module.exports = mongoose.model('Payment', paymentSchema);

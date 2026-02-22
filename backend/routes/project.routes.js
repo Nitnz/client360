@@ -17,4 +17,7 @@ router.get('/expiring', ctrl.getExpiringProjects);
 // Delete project
 router.delete('/:id', ctrl.deleteProject);
 
+// Get all projects (for dropdown)
+router.get('/', ctrl.getAllProjects);
+
 module.exports = router;

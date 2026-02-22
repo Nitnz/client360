@@ -1,57 +1,55 @@
 const Project = require('../models/project.model');
 const Payment = require('../models/payment.model');
+const Reminder = require('../models/reminder.model');
 
 exports.getReminders = async (req, res) => {
   try {
     const today = new Date();
-    const next7Days = new Date();
-    next7Days.setDate(today.getDate() + 7);
+    const soon = new Date(); soon.setDate(today.getDate() + 7);
+    const autoReminders = [];
 
-    // ✅ Expiring Domains
-    const expiringDomains = await Project.find({
-      domainExpiry: { $gte: today, $lte: next7Days }
-    }).select('projectName domainName domainExpiry client');
+    const projects = await Project.find().populate('client', 'name');
 
-    // ✅ Expiring Hosting
-    const expiringHosting = await Project.find({
-      hostingExpiry: { $gte: today, $lte: next7Days }
-    }).select('projectName hostingExpiry client');
+    for (const p of projects) {
+      const clientName = p.client?.name || 'Unknown';
 
-    // ✅ Pending Payments
-    const projects = await Project.find();
+      if (p.domainExpiry && new Date(p.domainExpiry) < today)
+        autoReminders.push({ type: 'DOMAIN_EXPIRED', projectName: p.projectName, clientName, expiryDate: p.domainExpiry, auto: true });
+      else if (p.domainExpiry && new Date(p.domainExpiry) <= soon)
+        autoReminders.push({ type: 'DOMAIN_EXPIRING', projectName: p.projectName, clientName, expiryDate: p.domainExpiry, auto: true });
 
-    const pendingPayments = [];
+      if (p.hostingExpiry && new Date(p.hostingExpiry) < today)
+        autoReminders.push({ type: 'HOSTING_EXPIRED', projectName: p.projectName, clientName, expiryDate: p.hostingExpiry, auto: true });
+      else if (p.hostingExpiry && new Date(p.hostingExpiry) <= soon)
+        autoReminders.push({ type: 'HOSTING_EXPIRING', projectName: p.projectName, clientName, expiryDate: p.hostingExpiry, auto: true });
 
-    for (const project of projects) {
-      const payments = await Payment.find({
-        projectId: project._id
-      });
-
-      const totalPaid = payments.reduce(
-        (sum, p) => sum + p.amount,
-        0
-      );
-
-      const balance = project.cost - totalPaid;
-
-      if (balance > 0) {
-        pendingPayments.push({
-          projectId: project._id,
-          projectName: project.projectName,
-          client: project.client,
-          projectCost: project.cost,
-          totalPaid,
-          balance
-        });
-      }
+      const payments = await Payment.find({ project: p._id });
+      const totalPaid = payments.reduce((sum, pay) => sum + pay.amount, 0);
+      const balance = p.cost - totalPaid;
+      if (balance > 0)
+        autoReminders.push({ type: 'PAYMENT_PENDING', projectName: p.projectName, clientName, balance, auto: true });
     }
 
-    res.json({
-      expiringDomains,
-      expiringHosting,
-      pendingPayments
-    });
+    const manualReminders = await Reminder.find().sort({ createdAt: -1 });
+    res.json([...autoReminders, ...manualReminders]);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
+exports.createReminder = async (req, res) => {
+  try {
+    const reminder = await Reminder.create(req.body);
+    res.status(201).json(reminder);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.deleteReminder = async (req, res) => {
+  try {
+    await Reminder.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Deleted' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

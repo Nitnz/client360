@@ -5,6 +5,8 @@ const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
 
+const paymentRoutes = require('./routes/payment.routes');
+
 connectDB();
 
 const app = express();
@@ -12,7 +14,10 @@ app.post('/debug', (req, res) => {
   res.json({ message: "POST debug works" });
 });
 
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:4200'
+}));
+
 app.use(express.json());
 
 app.use('/api/clients', require('./routes/client.routes'));
@@ -22,6 +27,7 @@ app.use('/api/users', require('./routes/user.routes'));
 app.use('/api/dashboard', require('./routes/dashboard.routes'));
 app.use('/api/notes', require('./routes/note.routes'));
 app.use('/api/notes', require('./routes/note.routes'));
+app.use('/api/reminders', require('./routes/reminder.routes'));
 
 
 

@@ -113,6 +113,19 @@ exports.getProjectById = async (req, res) => {
   }
 };
 
+// ✅ Get All Projects (for dropdowns)
+exports.getAllProjects = async (req, res) => {
+  try {
+    const projects = await Project.find()
+      .populate('client', 'name companyName')
+      .sort({ createdAt: -1 });
+
+    res.json(projects);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 
 // ================================
 // ✅ Update Project
@@ -122,7 +135,6 @@ exports.updateProject = async (req, res) => {
     const project = await Project.findByIdAndUpdate(
       req.params.id,
       req.body,
-      { new: true, runValidators: true }
     ).populate('client', 'name companyName email phone');
 
     if (!project) {
@@ -144,20 +156,11 @@ exports.updateProject = async (req, res) => {
 
 // ================================
 // ✅ Delete Project
-// ================================
 exports.deleteProject = async (req, res) => {
   try {
     const project = await Project.findByIdAndDelete(req.params.id);
-
-    if (!project) {
-      return res.status(404).json({ message: 'Project not found' });
-    }
-
-    res.json({
-      success: true,
-      message: 'Project deleted successfully'
-    });
-
+    if (!project) return res.status(404).json({ message: 'Project not found' });
+    res.json({ success: true, message: 'Project deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
